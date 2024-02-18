@@ -1,0 +1,32 @@
+name: Check Tibia launcher updates
+
+on:
+  schedule:
+    - cron: '0 10 * * TUE'
+  workflow_dispatch:
+
+env:
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: ''
+
+      - name: Fetch current and latest available version
+        id: check
+
+        run: |
+          echo "latest=$(curl -H 'User-Agent: Mozilla/5.0' -H 'Accept: application/json' --http2 --compressed https://static.tibia.com/launcher/launcher-windows-current/package.json.version)" | tee -a $GITHUB_OUTPUT
+          echo "current=$(gh release view --json tagName | jq -r .tagName)" | tee -a $GITHUB_OUTPUT
+
+      - name: Release new version
+        if: steps.check.outputs.latest != steps.check.outputs.current
+
+        run: |
+          curl -H 'User-Agent: Mozilla/5.0' -H 'Accept: application/json' --http2 --compressed https://static.tibia.com/download/tibia.x64.tar.gz --remote-name
+          gh release create v${{ steps.check.outputs.latest }} tibia.x64.tar.gz
