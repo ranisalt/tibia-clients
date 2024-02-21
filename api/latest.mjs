@@ -23,12 +23,14 @@ const getLatestVersion = async () => {
 	const expires = response.headers.get("expires");
 
 	switch (response.status) {
-		case 200:
+		case 200: {
+			const lastModified = response.headers.get("last-modified");
 			return {
 				expires,
-				lastModified: response.headers.get("last-modified"),
+				lastModified: lastModified && new Date(lastModified).toISOString(),
 				version: await response.text(),
 			};
+		}
 
 		case 304:
 			return { expires, lastModified, version: await kv.get("version") };
