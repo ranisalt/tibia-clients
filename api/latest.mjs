@@ -1,43 +1,65 @@
-import * as blob from "@vercel/blob";
+// @ts-check
 import { kv } from "@vercel/kv";
 
-async function getLatestVersion() {
-	const response = await fetch(
-		"https://static.tibia.com/launcher/launcher-windows-current/package.json.version",
-	);
+const clientUrl = process.env.CLIENT_URL || "";
+const versionUrl = process.env.VERSION_URL || "";
 
-	return response.text();
-}
+const isCacheHot = async () => {
+	/** @type {string | null} */
+	const savedExpires = await kv.get("expires");
+	if (!savedExpires) return false;
 
-async function getLatestBlob() {
-	const response = await fetch(
-		"https://static.tibia.com/download/tibia.x64.tar.gz",
-	);
+	return new Date(savedExpires) > new Date();
+};
 
-	return response.body;
-}
+const getLatestVersion = async () => {
+	const headers = new Headers();
 
-async function checkForUpdates() {
-	const version = await getLatestVersion();
-	if ((await kv.get("latest")) === version) {
-		console.log("No updates");
-		return blob.getDownloadUrl(`tibia-${version}.tar.gz`);
+	/** @type {string | null} */
+	const lastModified = await kv.get("last-modified");
+	if (lastModified) headers.set("if-modified-since", lastModified);
+
+	const response = await fetch(versionUrl, { headers });
+	const expires = response.headers.get("expires");
+
+	switch (response.status) {
+		case 200:
+			return {
+				expires,
+				lastModified: response.headers.get("last-modified"),
+				version: await response.text(),
+			};
+
+		case 304:
+			return { expires, lastModified, version: await kv.get("version") };
+
+		default:
+			throw new Error(`Unexpected status code: ${response.status}`);
+	}
+};
+
+/**
+ * @returns {Promise<{ lastModified: string | null, version: string | null }>}
+ */
+const checkForUpdates = async () => {
+	if (await isCacheHot()) {
+		console.log("Cache hit");
+		return {
+			lastModified: await kv.get("last-modified"),
+			version: await kv.get("version"),
+		};
 	}
 
-	const body = await getLatestBlob();
-	const { url } = await blob.put(`tibia-${version}.tar.gz`, body, {
-		access: "public",
-		addRandomSuffix: false,
-	});
+	const { expires, lastModified, version } = await getLatestVersion();
 
-	await kv.set(`blob-url-${version}`, url);
-	await kv.set("latest", version);
-	
-	return url;
-}
+	await Promise.all([
+		kv.set("expires", expires),
+		kv.set("last-modified", lastModified),
+		kv.set("version", version),
+	]);
 
-export async function GET() {
-	const location = await checkForUpdates();
+	return { lastModified, version };
+};
 
-	return new Response(null, { headers: { location }, status: 307 });
-}
+export const GET = async () =>
+	Response.json({ ...(await checkForUpdates()), url: clientUrl });
