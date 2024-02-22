@@ -4,7 +4,6 @@ import { Octokit } from "octokit";
 const { rest } = new Octokit({ auth: process.env.GITHUB_TOKEN });
 
 /**
- *
  * @param {string} clientVersionUrl
  * @param {string} launcherVersionUrl
  * @returns {Promise<{ clientVersion: string, launcherVersion: string }>}
