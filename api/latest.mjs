@@ -1,67 +1,21 @@
 // @ts-check
-import { kv } from "@vercel/kv";
+import { Octokit } from "octokit";
 
-const clientUrl = process.env.CLIENT_URL || "";
-const versionUrl = process.env.VERSION_URL || "";
+const { rest } = new Octokit({ auth: process.env.GITHUB_TOKEN });
 
-const isCacheHot = async () => {
-	/** @type {string | null} */
-	const savedExpires = await kv.get("expires");
-	if (!savedExpires) return false;
+export const GET = async () => {
+	const { data } = await rest.repos.getLatestRelease({
+		owner: "ranisalt",
+		repo: "tibia-clients",
+	});
 
-	return new Date(savedExpires) > new Date();
-};
+	const asset = data.assets.find(
+		({ name }) => name.startsWith("tibia-x64-v") && name.endsWith(".tar.gz"),
+	);
 
-const getLatestVersion = async () => {
-	const headers = new Headers();
-
-	/** @type {string | null} */
-	const lastModified = await kv.get("last-modified");
-	if (lastModified) headers.set("if-modified-since", lastModified);
-
-	const response = await fetch(versionUrl, { headers });
-	const expires = response.headers.get("expires");
-
-	switch (response.status) {
-		case 200: {
-			const lastModified = response.headers.get("last-modified");
-			return {
-				expires,
-				lastModified: lastModified && new Date(lastModified).toISOString(),
-				version: await response.text(),
-			};
-		}
-
-		case 304:
-			return { expires, lastModified, version: await kv.get("version") };
-
-		default:
-			throw new Error(`Unexpected status code: ${response.status}`);
-	}
-};
-
-/**
- * @returns {Promise<{ lastModified: string | null, version: string | null }>}
- */
-const checkForUpdates = async () => {
-	if (await isCacheHot()) {
-		console.log("Cache hit");
-		return {
-			lastModified: await kv.get("last-modified"),
-			version: await kv.get("version"),
-		};
+	if (asset) {
+		return Response.redirect(asset.browser_download_url, 307);
 	}
 
-	const { expires, lastModified, version } = await getLatestVersion();
-
-	await Promise.all([
-		kv.set("expires", expires),
-		kv.set("last-modified", lastModified),
-		kv.set("version", version),
-	]);
-
-	return { lastModified, version };
+	return new Response(null, { status: 404 });
 };
-
-export const GET = async () =>
-	Response.json({ ...(await checkForUpdates()), url: clientUrl });
