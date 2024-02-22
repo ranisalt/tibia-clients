@@ -23,23 +23,24 @@ const getLatestVersion = async (clientVersionUrl, launcherVersionUrl) => {
  * @returns {Promise<Response>}
  */
 export const GET = async (req) => {
-	if (
-		req.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`
-	) {
+	const {
+		CLIENT_VERSION_URL,
+		CRON_SECRET,
+		LAUNCHER_VERSION_URL,
+		LAUNCHER_DOWNLOAD_URL,
+	} = process.env;
+
+	if (req.headers.get("authorization") !== `Bearer ${CRON_SECRET}`) {
 		return new Response(null, { status: 401 });
 	}
 
-	if (
-		!process.env.CLIENT_VERSION_URL ||
-		!process.env.LAUNCHER_VERSION_URL ||
-		!process.env.LAUNCHER_DOWNLOAD_URL
-	) {
+	if (!CLIENT_VERSION_URL || !LAUNCHER_VERSION_URL || !LAUNCHER_DOWNLOAD_URL) {
 		return new Response(null, { status: 500 });
 	}
 
 	const { clientVersion, launcherVersion } = await getLatestVersion(
-		process.env.CLIENT_VERSION_URL,
-		process.env.LAUNCHER_VERSION_URL,
+		CLIENT_VERSION_URL,
+		LAUNCHER_VERSION_URL,
 	);
 	const filename = `tibia-x64-v${launcherVersion}.tar.gz`;
 
@@ -69,9 +70,9 @@ export const GET = async (req) => {
 		releaseId = data.id;
 	}
 
-	const res = await fetch(process.env.LAUNCHER_DOWNLOAD_URL);
+	const res = await fetch(LAUNCHER_DOWNLOAD_URL);
 	if (!res.ok) {
-		throw new Error(`Failed to fetch ${process.env.LAUNCHER_DOWNLOAD_URL}`);
+		throw new Error(`Failed to fetch ${LAUNCHER_DOWNLOAD_URL}`);
 	}
 
 	await rest.repos.uploadReleaseAsset({
