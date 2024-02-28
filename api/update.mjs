@@ -1,46 +1,25 @@
 // @ts-check
 import { Octokit } from "octokit";
+import { getLatestVersion } from "../lib/version.mjs";
 
 const { rest } = new Octokit({ auth: process.env.GITHUB_TOKEN });
-
-/**
- * @param {string} clientVersionUrl
- * @param {string} launcherVersionUrl
- * @returns {Promise<{ clientVersion: string, launcherVersion: string }>}
- */
-const getLatestVersion = async (clientVersionUrl, launcherVersionUrl) => {
-	const [clientVersion, launcherVersion] = await Promise.all([
-		fetch(clientVersionUrl).then((res) => res.text()),
-		fetch(launcherVersionUrl).then((res) => res.text()),
-	]);
-
-	return { clientVersion, launcherVersion };
-};
 
 /**
  * @param {Request} req
  * @returns {Promise<Response>}
  */
 export const GET = async (req) => {
-	const {
-		CLIENT_VERSION_URL,
-		CRON_SECRET,
-		LAUNCHER_VERSION_URL,
-		LAUNCHER_DOWNLOAD_URL,
-	} = process.env;
+	const { CRON_SECRET, LAUNCHER_DOWNLOAD_URL } = process.env;
 
 	if (req.headers.get("authorization") !== `Bearer ${CRON_SECRET}`) {
 		return new Response(null, { status: 401 });
 	}
 
-	if (!CLIENT_VERSION_URL || !LAUNCHER_VERSION_URL || !LAUNCHER_DOWNLOAD_URL) {
+	if (!LAUNCHER_DOWNLOAD_URL) {
 		return new Response(null, { status: 500 });
 	}
 
-	const { clientVersion, launcherVersion } = await getLatestVersion(
-		CLIENT_VERSION_URL,
-		LAUNCHER_VERSION_URL,
-	);
+	const { clientVersion, launcherVersion } = await getLatestVersion();
 	const filename = `tibia-x64-v${launcherVersion}.tar.gz`;
 
 	let releaseId;
