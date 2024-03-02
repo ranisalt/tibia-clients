@@ -4,7 +4,7 @@ on:
   schedule:
     # check right after Tuesday server save, and every hour after that for 8 hours to catch hotfixes
     # at minute 5 past every hour from 10 through 18 on Tuesday
-    - cron: '5 10-18 * * 2'
+    - cron: '5 10-18 * * TUE'
   workflow_dispatch:
 
 jobs:
