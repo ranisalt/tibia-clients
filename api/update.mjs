@@ -2,6 +2,8 @@
 import { Octokit } from "octokit";
 import { getLatestVersion } from "../lib/version.mjs";
 
+export const config = { runtime: "edge" };
+
 const { rest } = new Octokit({ auth: process.env.GITHUB_TOKEN });
 
 /**
