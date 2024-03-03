@@ -7,12 +7,10 @@
   "author": "",
   "type": "module",
   "main": "index.js",
-  "dependencies": {
-    "octokit": "^3.1.2"
-  },
   "devDependencies": {
     "@biomejs/biome": "^1.5.3",
-    "@types/node": "^20.11.19"
+    "@types/node": "^20.11.24",
+    "@vercel/edge": "^1.1.1"
   },
   "packageManager": "pnpm@8.15.3+sha256.fc4a49bd609550a41e14d20efbce802a4b892aa4cac877322de2f0924f122991"
 }
