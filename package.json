@@ -1,16 +1,16 @@
 {
-  "name": "tibia-clients",
-  "version": "1.0.0",
-  "description": "",
-  "keywords": [],
-  "license": "ISC",
-  "author": "",
-  "type": "module",
-  "main": "index.js",
-  "devDependencies": {
-    "@biomejs/biome": "^1.5.3",
-    "@types/node": "^20.11.24",
-    "@vercel/edge": "^1.1.1"
-  },
-  "packageManager": "pnpm@8.15.3+sha256.fc4a49bd609550a41e14d20efbce802a4b892aa4cac877322de2f0924f122991"
+	"name": "tibia-clients",
+	"version": "1.0.0",
+	"description": "",
+	"keywords": [],
+	"license": "ISC",
+	"author": "",
+	"type": "module",
+	"main": "index.js",
+	"devDependencies": {
+		"@biomejs/biome": "^1.6.0",
+		"@types/node": "^20.11.25",
+		"@vercel/edge": "^1.1.1"
+	},
+	"packageManager": "pnpm@8.15.3+sha256.fc4a49bd609550a41e14d20efbce802a4b892aa4cac877322de2f0924f122991"
 }
